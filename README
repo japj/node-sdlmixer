@@ -6,3 +6,13 @@ Note: since I am completely new to nodejs addon development, this
 is currently a very bad example of coding it.
 
 
+Requirements for compilation:
+- nodejs
+- node-waf
+- SDL-dev
+- SDL_mixer-dev
+
+tested on ubuntu 11.04 (64bit) with:
+*) installing nodejs
+*) sudo apt-get install libsdl1.2-dev
+*) sudo apt-get install libsdlmixer1.2-dev
