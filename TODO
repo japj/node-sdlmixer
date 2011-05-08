@@ -14,4 +14,4 @@
 
 *) how to cleanup addon?
 
-
+*) how to deal with async loading of the audio data within this addon through SDL?
