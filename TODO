@@ -1,0 +1,17 @@
+(slightly random order)
+
+*) api based on https://github.com/Marak/play.js:
+   var play = require("<addon>");
+   play.sound(<filepath>");
+   play.sound(<filepath>", onCompletionCallback);
+
+*) Use Mix_ChannelFinished to handle play sound done
+   http://www.libsdl.org/projects/SDL_mixer/docs/SDL_mixer.html#SEC37
+
+*) track multiple channels playing and their callbacks
+
+*) check proper way to initialise SDL api (once?) during import?
+
+*) how to cleanup addon?
+
+
