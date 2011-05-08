@@ -1,0 +1,8 @@
+node-sdlmixer experiment
+
+This is an experiment to get sdlmixer working together with nodejs.
+
+Note: since I am completely new to nodejs addon development, this
+is currently a very bad example of coding it.
+
+
