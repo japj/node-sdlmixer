@@ -131,7 +131,7 @@ static void initSDL(void)
 			(audio_channels > 1) ? "stereo" : "mono");
 
   }
-  numChannels = Mix_AllocateChannels(-1);
+  numChannels = Mix_AllocateChannels(32);
   printf("numChannels[%d]\n", numChannels);
 }
 
