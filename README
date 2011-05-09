@@ -1,4 +1,4 @@
-node-sdlmixer experiment
+ node-sdlmixer experiment
 
 This is an experiment to get sdlmixer working together with nodejs.
 
@@ -17,6 +17,10 @@ tested on ubuntu 11.04 (64bit) with:
 *) sudo apt-get install libsdl1.2-dev
 *) sudo apt-get install libsdlmixer1.2-dev
 
+tested on osx 10.6.7 + brew
+*) install nodejs
+*) brew install sdl
+*) brew install sdl_mixer
 
 npm install node-sdlmixer
 
