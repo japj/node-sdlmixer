@@ -16,3 +16,17 @@ tested on ubuntu 11.04 (64bit) with:
 *) installing nodejs
 *) sudo apt-get install libsdl1.2-dev
 *) sudo apt-get install libsdlmixer1.2-dev
+
+
+npm install node-sdlmixer
+
+$ node
+> var p = require("node-sdlmixer");
+Opened audio at 22050 Hz 16 bit stereo
+numChannels[32]
+> p.play("github/node-sdlmixer/wavs/alarm.wav");
+Loading github/node-sdlmixer/wavs/alarm.wav
+'github/node-sdlmixer/wavs/alarm.wav'
+> Playing on channel[1]
+Done
+
