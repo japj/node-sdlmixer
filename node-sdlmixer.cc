@@ -50,6 +50,9 @@ static int DoPlay(eio_req *req)
 
   } /* while still_playing() loop... */
   printf("Done\n");
+
+  Mix_FreeChunk(pi->wave);
+  pi->wave = NULL;
   return 0;
 }
 
