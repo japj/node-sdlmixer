@@ -24,7 +24,7 @@ static int still_playing(int channel)
 
 static int getNextChannel()
 {
-  int channel = curChannel ++;
+  int channel = curChannel + 1;
   if (channel == numChannels)
   {
     channel = 0;
@@ -41,7 +41,7 @@ static int DoPlay(eio_req *req)
   printf("Loading %s\n",pi->name);
   pi->wave = Mix_LoadWAV(pi->name);
 
-  printf("Playing\n");
+  printf("Playing on channel[%d]\n", pi->channel);
   /* Play and then exit */
   Mix_PlayChannel(pi->channel, pi->wave, 0);
 
