@@ -9,10 +9,24 @@ sdlmixer.play("./wavs/alarm.wav", function () {
 });
 
 // these are all "fire and forget", no callback
-sdlmixer.play('./wavs/kick.wav');
+var i=0;
+for (i=0;i<20;i++) {
+  sdlmixer.play('./wavs/kick.wav', function() {
+    puts("done");
+  });
+}
 sdlmixer.play('./wavs/phazed.wav');
-sdlmixer.play('./wavs/flush.wav');
+sdlmixer.play('./wavs/flush.wav', function() {
+  sdlmixer.play('./wavs/kick.wav');
+});
 sdlmixer.play('./wavs/ding.wav');
-sdlmixer.play('./wavs/intro.wav');
+sdlmixer.play('./wavs/intro.wav', function() {
+  sdlmixer.play('./wavs/ding.wav');
+  for (i=0;i<20;i++) {
+    sdlmixer.play('./wavs/kick.wav', function() {
+      puts("done");
+    });
+  }
+});
 
 

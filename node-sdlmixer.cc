@@ -2,9 +2,11 @@
 #include <node.h>
 #include "SDL.h"
 #include "SDL_mixer.h"
+#include <deque>
 
 using namespace v8;
 using namespace node;
+using namespace std;
 
 struct playInfo {
   Persistent<Function> cb;
@@ -17,20 +19,42 @@ struct playInfo {
 static int numChannels = 0;
 static int curChannel = 0;
 
+static deque<int> availableChannels;
+
+/**
+ * Call this to determine if a channel is still playing
+ * Returns 0 if the channel is not playing, 1 if it is playing
+ * @param channel Channel to check for playing
+ */
 static int still_playing(int channel)
 {
   return(Mix_Playing(channel));
 }
 
-static int getNextChannel()
+/**
+ * Call this to claim an audio channel
+ * Returns either an available channel (>=0) or
+ * -1 (no available audio channel)
+ */
+static int claimAudioChannel()
 {
-  int channel = curChannel + 1;
-  if (channel == numChannels)
-  {
-    channel = 0;
+  // TODO: lock access to availableChannels?
+  int result = -1;
+  if (availableChannels.size() > 1) {
+    result = availableChannels.front();
+    availableChannels.pop_front();
   }
-  curChannel = channel;
-  return channel;
+  return result;
+}
+
+/**
+ * Call this to release a previously claimed audio channel
+ * @param channel The channel number to release
+ */
+static void releaseAudioChannel(int channel)
+{
+  // TODO: lock access to availableChannels?
+  availableChannels.push_back(channel);
 }
 
 static int DoPlay(eio_req *req)
@@ -38,10 +62,9 @@ static int DoPlay(eio_req *req)
   struct playInfo * pi = (struct playInfo *) req->data;
 
   /* Load the requested wave file */
-  printf("Loading %s\n",pi->name);
   pi->wave = Mix_LoadWAV(pi->name);
 
-  printf("Playing on channel[%d]\n", pi->channel);
+  printf("Playing [%s] on channel[%d]\n", pi->name, pi->channel);
   /* Play and then exit */
   Mix_PlayChannel(pi->channel, pi->wave, 0);
 
@@ -49,7 +72,6 @@ static int DoPlay(eio_req *req)
     SDL_Delay(1);
 
   } /* while still_playing() loop... */
-  printf("Done\n");
 
   Mix_FreeChunk(pi->wave);
   pi->wave = NULL;
@@ -61,6 +83,9 @@ static int NotifyPlayed(eio_req *req)
   HandleScope scope;
   ev_unref(EV_DEFAULT_UC);
   struct playInfo * pi = (struct playInfo *) req->data;
+
+  printf("Done playing channel[%d]\n", pi->channel);
+  releaseAudioChannel(pi->channel);  
 
   Local<Value> argv[1];
   argv[0] = Local<Value>::New(Null());
@@ -82,9 +107,15 @@ static Handle<Value> Play(const Arguments& args) {
   HandleScope scope;
 
   const char *usage = "usage: play(fileName, <callbackFunc>)";
+  const char *noMoreChannels = "Out of available channels";
   // TODO: optional 2nd callbackFunc parameter?
   if (args.Length() < 1) {
     return ThrowException(Exception::Error(String::New(usage)));
+  }
+  int channel = claimAudioChannel();
+
+  if (channel < 0) {
+    return ThrowException(Exception::Error(String::New(noMoreChannels)));
   }
 
   String::Utf8Value fileName(args[0]);
@@ -95,7 +126,7 @@ static Handle<Value> Play(const Arguments& args) {
 
   pi->cb = Persistent<Function>::New(cb);
   pi->doCallback = args[1]->IsFunction();
-  pi->channel = getNextChannel();
+  pi->channel = channel;
   pi->wave = NULL;
   strncpy(pi->name, *fileName, fileName.length() +1);
 
@@ -136,6 +167,10 @@ static void initSDL(void)
   }
   numChannels = Mix_AllocateChannels(32);
   printf("numChannels[%d]\n", numChannels);
+
+  for (int x=0;x<numChannels;x++) {
+    availableChannels.push_back(x);
+  }
 }
 
 extern "C" void
