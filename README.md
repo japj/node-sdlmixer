@@ -1,4 +1,4 @@
- node-sdlmixer experiment
+# node-sdlmixer experiment
 
 This is an experiment to get sdlmixer working together with nodejs.
 
@@ -6,7 +6,7 @@ Note: since I am completely new to nodejs addon development, this
 is currently a very bad example of coding it.
 
 
-Requirements for compilation:
+## Requirements for compilation:
 - nodejs
 - node-waf
 - SDL-dev
@@ -22,7 +22,11 @@ tested on osx 10.6.7 + brew
 *) brew install sdl
 *) brew install sdl_mixer
 
+## Install with npm 
+
 npm install node-sdlmixer
+
+## Simple usage example
 
 $ node
 > var p = require("node-sdlmixer");

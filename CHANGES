@@ -1,0 +1,11 @@
+2011.05.10
+
+* Updated installation instructions for MAC (tmpvar)
+
+* fix local build polluting published npm version
+
+2011.05.09, Version 0.0.1
+
+* Initial release
+  - play audio function with async callback mechanism
+    (intial implementation by chapel)
