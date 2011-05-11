@@ -84,15 +84,15 @@ static int NotifyPlayed(eio_req *req)
   ev_unref(EV_DEFAULT_UC);
   struct playInfo * pi = (struct playInfo *) req->data;
 
-  printf("Done playing channel[%d]\n", pi->channel);
   releaseAudioChannel(pi->channel);  
 
-  Local<Value> argv[1];
-  argv[0] = Local<Value>::New(Null());
+  Local<Value> argv[2];
+  argv[0] = Local<Value>::New(String::New(pi->name));
+  argv[1] = Local<Value>::New(Integer::New(pi->channel));
 
   if (pi->doCallback) {
     TryCatch try_catch;
-    pi->cb->Call(Context::GetCurrent()->Global(),1,argv);
+    pi->cb->Call(Context::GetCurrent()->Global(),2,argv);
     if (try_catch.HasCaught()) {
       FatalException(try_catch);
     }

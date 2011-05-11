@@ -3,6 +3,7 @@ Unreleased
 * changed npm package to 'sdlmixer' 
   (was previously 'node-sdlmixer')
 * better channel administration for concurrent play
+* added optional parameters to play done callback (fileName, channel)
 
 
 2011.05.10, Version 0.0.2
