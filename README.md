@@ -26,12 +26,12 @@ tested on osx 10.6.7 + brew
 
 ## Install with npm 
 
-npm install node-sdlmixer
+npm install sdlmixer
 
 ## Simple usage example
 
     $ node
-    > var p = require("node-sdlmixer");
+    > var p = require("sdlmixer");
     Opened audio at 22050 Hz 16 bit stereo
     numChannels[32]
     > p.play("github/node-sdlmixer/wavs/alarm.wav");
