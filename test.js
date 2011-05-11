@@ -1,4 +1,4 @@
-var sdlmixer = require("./build/default/node-sdlmixer"),
+var sdlmixer = require("./sdlmixer"),
          sys = require("sys"),
         puts = sys.puts;
 
