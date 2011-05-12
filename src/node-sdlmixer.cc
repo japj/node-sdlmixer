@@ -12,9 +12,8 @@ static deque<int> availableChannels;
  * Returns 0 if the channel is not playing, 1 if it is playing
  * @param channel Channel to check for playing
  */
-static int still_playing(int channel)
-{
-  return(Mix_Playing(channel));
+static int still_playing(int channel) {
+  return (Mix_Playing(channel));
 }
 
 /**
@@ -22,8 +21,7 @@ static int still_playing(int channel)
  * Returns either an available channel (>=0) or
  * -1 (no available audio channel)
  */
-static int claimAudioChannel()
-{
+static int claimAudioChannel() {
   // TODO: lock access to availableChannels?
   int result = -1;
   if (availableChannels.size() > 1) {
@@ -37,14 +35,12 @@ static int claimAudioChannel()
  * Call this to release a previously claimed audio channel
  * @param channel The channel number to release
  */
-static void releaseAudioChannel(int channel)
-{
+static void releaseAudioChannel(int channel) {
   // TODO: lock access to availableChannels?
   availableChannels.push_back(channel);
 }
 
-static int DoPlay(eio_req *req)
-{
+static int DoPlay(eio_req *req) {
   struct playInfo * pi = (struct playInfo *) req->data;
 
   /* Load the requested wave file */
@@ -64,13 +60,12 @@ static int DoPlay(eio_req *req)
   return 0;
 }
 
-static int NotifyPlayed(eio_req *req)
-{
+static int NotifyPlayed(eio_req *req) {
   HandleScope scope;
-  ev_unref(EV_DEFAULT_UC);
+  ev_unref( EV_DEFAULT_UC);
   struct playInfo * pi = (struct playInfo *) req->data;
 
-  releaseAudioChannel(pi->channel);  
+  releaseAudioChannel(pi->channel);
 
   Local<Value> argv[2];
   argv[0] = Local<Value>::New(String::New(pi->name));
@@ -78,7 +73,7 @@ static int NotifyPlayed(eio_req *req)
 
   if (pi->doCallback) {
     TryCatch try_catch;
-    pi->cb->Call(Context::GetCurrent()->Global(),2,argv);
+    pi->cb->Call(Context::GetCurrent()->Global(), 2, argv);
     if (try_catch.HasCaught()) {
       FatalException(try_catch);
     }
@@ -107,27 +102,50 @@ static Handle<Value> Play(const Arguments& args) {
   String::Utf8Value fileName(args[0]);
   Local<Function> cb = Local<Function>::Cast(args[1]);
 
-  playInfo *pi = (playInfo *)
-    malloc(sizeof(struct playInfo) + fileName.length()+1);
+  playInfo *pi = (playInfo *) malloc(sizeof(struct playInfo)
+      + fileName.length() + 1);
 
   pi->cb = Persistent<Function>::New(cb);
   pi->doCallback = args[1]->IsFunction();
   pi->channel = channel;
   pi->wave = NULL;
-  strncpy(pi->name, *fileName, fileName.length() +1);
+  strncpy(pi->name, *fileName, fileName.length() + 1);
 
   eio_custom(DoPlay, EIO_PRI_DEFAULT, NotifyPlayed, pi);
-  ev_ref(EV_DEFAULT_UC);
+  ev_ref( EV_DEFAULT_UC);
 
   return scope.Close(args[0]);
 }
 
-static void initSDL(void)
-{
-  /* Initialize the SDL library */
-  if ( SDL_Init(SDL_INIT_AUDIO) < 0 ) {
-    fprintf(stderr, "Couldn't initialize SDL: %s\n",SDL_GetError());
-    return ;
+Persistent<FunctionTemplate> SDLMixer::constructor_template;
+
+SDLMixer::SDLMixer() {
+
+}
+
+SDLMixer::~SDLMixer() {
+
+}
+
+void SDLMixer::Initialize(Handle<Object> target) {
+  HandleScope scope;
+
+  Local<FunctionTemplate> t = FunctionTemplate::New(New);
+  constructor_template = Persistent<FunctionTemplate>::New(t);
+  constructor_template->InstanceTemplate()->SetInternalFieldCount(1);
+  constructor_template->SetClassName(String::NewSymbol("SDLMixer"));
+
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "play", Play);
+  target->Set(String::NewSymbol("SDLMixer"), constructor_template->GetFunction());
+}
+
+Handle<Value> SDLMixer::New(const Arguments &args) {
+  HandleScope scope;
+
+  if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+    return ThrowException(Exception::TypeError(
+                String::New(SDL_GetError()))
+    );
   }
 
   int audio_rate;
@@ -141,30 +159,43 @@ static void initSDL(void)
 
   /* Open the audio device */
   if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, 4096) < 0) {
-    fprintf(stderr, "Couldn't open audio: %s\n", SDL_GetError());
+    SDL_Quit();
+    return ThrowException(Exception::TypeError(
+                    String::New(SDL_GetError()))
+    );
   }
-  else {
-    Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
-    printf("Opened audio at %d Hz %d bit %s\n", audio_rate,
-			(audio_format&0xFF),
-			(audio_channels > 2) ? "surround" :
-			(audio_channels > 1) ? "stereo" : "mono");
 
-  }
   numChannels = Mix_AllocateChannels(32);
-  printf("numChannels[%d]\n", numChannels);
 
-  for (int x=0;x<numChannels;x++) {
+  for (int x = 0; x < numChannels; x++) {
     availableChannels.push_back(x);
   }
+
+  Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
+
+  args.This()->Set(String::NewSymbol("audioRate"),
+      Integer::New(audio_rate), ReadOnly);
+  args.This()->Set(String::NewSymbol("audioFormat"),
+      Integer::New((audio_format & 0xFF)), ReadOnly);
+  args.This()->Set(String::NewSymbol("audioChannels"),
+      String::New((audio_channels > 2) ? "surround"
+                : (audio_channels > 1) ? "stereo" : "mono"), ReadOnly);
+  args.This()->Set(String::NewSymbol("numberOfAudioChannels"),
+        Integer::New(numChannels));
+
+  SDLMixer *sdlmixer = new SDLMixer();
+  sdlmixer->Wrap(args.This());
+  return args.This();
 }
 
-extern "C" void
-init (Handle<Object> target)
-{
+
+
+extern "C" void init(Handle<Object> target) {
   HandleScope scope;
 
-  initSDL();
+  //initSDL();
 
-  NODE_SET_METHOD(target, "play", Play);
+  //NODE_SET_METHOD(target, "play", Play);
+
+  SDLMixer::Initialize(target);
 }

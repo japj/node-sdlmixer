@@ -1,5 +1,9 @@
 Unreleased
 
+* switched to ObjectWrap derived class implementation
+* added new sdlmixer library properties: 
+  audioRate, audioFormat, audioChannels, numberOfAudioChannels for
+  access to readonly mixer settings. 
 * internal source tree restucturing:
   - src/ contains c++ sources (incl seperated header file)
   - wavs/ contains original audio tree layout from play.js tree

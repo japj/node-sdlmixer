@@ -16,14 +16,28 @@ using namespace std;
 namespace node_sdlmixer {
 
 struct playInfo {
-  Persistent<Function> cb;
-  int doCallback;
-  int channel;
-  Mix_Chunk *wave;
-  char name[1]; // should be last one in the struct
+	Persistent<Function> cb;
+	int doCallback;
+	int channel;
+	Mix_Chunk *wave;
+	char name[1]; // should be last one in the struct
 };
 
+class SDLMixer: public ObjectWrap {
+public:
+	static Persistent<FunctionTemplate> constructor_template;
+
+	static void Initialize(Handle<Object> target);
+protected:
+
+	static Handle<Value> New(const Arguments& args);
+
+	SDLMixer();
+	~SDLMixer();
+
+private:
 
 };
 
-#endif
+} // namespace node_sdlmixer
+#endif // NODE_SDLMIXER_H
