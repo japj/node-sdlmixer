@@ -4,28 +4,28 @@ var sdlmixer = require("../sdlmixer"),
 
 // play with a callback
 
-sdlmixer.play("../wavs/sfx/alarm.wav", function () {
+sdlmixer.play(__dirname + "/../wavs/sfx/alarm.wav", function () {
   puts("done")
 });
 
 // these are all "fire and forget", no callback
 var i=0;
 for (i=0;i<20;i++) {
-  sdlmixer.play('../wavs/drums/kick.wav', function(fileName, channel) {
+  sdlmixer.play(__dirname + '/../wavs/drums/kick.wav', function(fileName, channel) {
 	puts(channel +": "+fileName + " done")
   });
 }
-sdlmixer.play('../wavs/drums/phazed.wav');
-sdlmixer.play('../wavs/sfx/flush.wav', function(fileName, channel) {
+sdlmixer.play(__dirname + '/../wavs/drums/phazed.wav');
+sdlmixer.play(__dirname + '/../wavs/sfx/flush.wav', function(fileName, channel) {
   puts(channel +": "+fileName + " done")
-  sdlmixer.play('../wavs/drums/snare.wav');
+  sdlmixer.play(__dirname + '/../wavs/drums/snare.wav');
 });
-sdlmixer.play('../wavs/sfx/ding.wav');
-sdlmixer.play('../wavs/sfx/intro.wav', function(fileName, channel) {
+sdlmixer.play(__dirname + '/../wavs/sfx/ding.wav');
+sdlmixer.play(__dirname + '/../wavs/sfx/intro.wav', function(fileName, channel) {
   puts(channel +": "+fileName + " done")
-  sdlmixer.play('../wavs/sfx/ding.wav');
+  sdlmixer.play(__dirname + '/../wavs/sfx/ding.wav');
   for (i=0;i<20;i++) {
-    sdlmixer.play('../wavs/drums/kick.wav', function(fileName, channel) {
+    sdlmixer.play(__dirname + '/../wavs/drums/kick.wav', function(fileName, channel) {
     	puts(channel +": "+fileName + " done")
     });
   }
