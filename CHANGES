@@ -1,5 +1,9 @@
 Unreleased
 
+* internal source tree restucturing:
+  - src/ contains c++ sources (incl seperated header file)
+  - wavs/ contains original audio tree layout from play.js tree
+  - test/ contains the test
 * changed npm package to 'sdlmixer' 
   (was previously 'node-sdlmixer')
 * better channel administration for concurrent play
