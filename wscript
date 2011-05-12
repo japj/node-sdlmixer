@@ -34,5 +34,5 @@ def configure(conf):
 def build(bld):
   obj = bld.new_task_gen('cxx', 'shlib', 'node_addon')
   obj.target = 'node-sdlmixer'
-  obj.source = 'node-sdlmixer.cc'
+  obj.source = 'src/node-sdlmixer.cc'
   obj.uselib = "SDL"
