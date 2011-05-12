@@ -1,20 +1,6 @@
-#include <v8.h>
-#include <node.h>
-#include "SDL.h"
-#include "SDL_mixer.h"
-#include <deque>
+#include "node-sdlmixer.h"
 
-using namespace v8;
-using namespace node;
-using namespace std;
-
-struct playInfo {
-  Persistent<Function> cb;
-  int doCallback;
-  int channel;
-  Mix_Chunk *wave;
-  char name[1]; // should be last one in the struct
-};
+using namespace node_sdlmixer;
 
 static int numChannels = 0;
 static int curChannel = 0;
