@@ -1,13 +1,11 @@
-# node-sdlmixer experiment
+# node-sdlmixer
 
-This is an experiment to get sdlmixer working together with nodejs.
-
-Note: since I am completely new to nodejs addon development, this
-is currently a very bad example of coding it.
-
+This node addon was originally started due the
+"Low-Latency Cross-Platform Audio Playback" thread on the node mailinglist at
+http://groups.google.com/group/nodejs/browse_thread/thread/5b62789562697956
 
 ## Requirements for compilation:
-- nodejs
+- node
 - node-waf
 - SDL-dev
 - SDL_mixer-dev
@@ -39,4 +37,3 @@ npm install sdlmixer
     'github/node-sdlmixer/wavs/alarm.wav'
     > Playing on channel[1]
     Done
-
