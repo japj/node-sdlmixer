@@ -3,18 +3,8 @@
 using namespace node_sdlmixer;
 
 static int numChannels = 0;
-static int curChannel = 0;
 
 static deque<int> availableChannels;
-
-/**
- * Call this to determine if a channel is still playing
- * Returns 0 if the channel is not playing, 1 if it is playing
- * @param channel Channel to check for playing
- */
-static int still_playing(int channel) {
-  return (Mix_Playing(channel));
-}
 
 /**
  * Call this to claim an audio channel
@@ -46,45 +36,21 @@ static int DoPlay(eio_req *req) {
   /* Load the requested wave file */
   pi->wave = Mix_LoadWAV(pi->name);
 
-  printf("Playing [%s] on channel[%d]\n", pi->name, pi->channel);
+  //printf("Playing [%s] on channel[%d]\n", pi->name, pi->channel);
   /* Play and then exit */
   Mix_PlayChannel(pi->channel, pi->wave, 0);
 
-  while (still_playing(pi->channel)) {
-    SDL_Delay(1);
-
-  } /* while still_playing() loop... */
-
-  Mix_FreeChunk(pi->wave);
-  pi->wave = NULL;
   return 0;
 }
 
-static int NotifyPlayed(eio_req *req) {
+int SDLMixer::NotifyPlayed(eio_req *req) {
   HandleScope scope;
   ev_unref( EV_DEFAULT_UC);
-  struct playInfo * pi = (struct playInfo *) req->data;
-
-  releaseAudioChannel(pi->channel);
-
-  Local<Value> argv[2];
-  argv[0] = Local<Value>::New(String::New(pi->name));
-  argv[1] = Local<Value>::New(Integer::New(pi->channel));
-
-  if (pi->doCallback) {
-    TryCatch try_catch;
-    pi->cb->Call(Context::GetCurrent()->Global(), 2, argv);
-    if (try_catch.HasCaught()) {
-      FatalException(try_catch);
-    }
-  }
-
-  pi->cb.Dispose();
-  free(pi);
+  //printf("SDLMixer::NotifyPlayed\n");
   return 0;
 }
 
-static Handle<Value> Play(const Arguments& args) {
+Handle<Value> SDLMixer::Play(const Arguments& args) {
   HandleScope scope;
 
   const char *usage = "usage: play(fileName, <callbackFunc>)";
@@ -111,6 +77,8 @@ static Handle<Value> Play(const Arguments& args) {
   pi->wave = NULL;
   strncpy(pi->name, *fileName, fileName.length() + 1);
 
+  playInfoChannelList[channel] = pi;
+
   eio_custom(DoPlay, EIO_PRI_DEFAULT, NotifyPlayed, pi);
   ev_ref( EV_DEFAULT_UC);
 
@@ -118,13 +86,13 @@ static Handle<Value> Play(const Arguments& args) {
 }
 
 Persistent<FunctionTemplate> SDLMixer::constructor_template;
+vector<playInfo *> SDLMixer::playInfoChannelList;
+SDLMixer::AsyncPlayDone *SDLMixer::playDoneEvent = NULL;
 
 SDLMixer::SDLMixer() {
-
 }
 
 SDLMixer::~SDLMixer() {
-
 }
 
 void SDLMixer::Initialize(Handle<Object> target) {
@@ -136,16 +104,15 @@ void SDLMixer::Initialize(Handle<Object> target) {
   constructor_template->SetClassName(String::NewSymbol("SDLMixer"));
 
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "play", Play);
-  target->Set(String::NewSymbol("SDLMixer"), constructor_template->GetFunction());
+  target->Set(String::NewSymbol("SDLMixer"),
+      constructor_template->GetFunction());
 }
 
 Handle<Value> SDLMixer::New(const Arguments &args) {
   HandleScope scope;
 
   if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-    return ThrowException(Exception::TypeError(
-                String::New(SDL_GetError()))
-    );
+    return ThrowException(Exception::TypeError(String::New(SDL_GetError())));
   }
 
   int audio_rate;
@@ -160,42 +127,91 @@ Handle<Value> SDLMixer::New(const Arguments &args) {
   /* Open the audio device */
   if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, 4096) < 0) {
     SDL_Quit();
-    return ThrowException(Exception::TypeError(
-                    String::New(SDL_GetError()))
-    );
+    return ThrowException(Exception::TypeError(String::New(SDL_GetError())));
   }
+
+  Mix_ChannelFinished(SDLMixer::ChannelFinished);
 
   numChannels = Mix_AllocateChannels(32);
 
+  playInfoChannelList.resize(numChannels);
+
   for (int x = 0; x < numChannels; x++) {
     availableChannels.push_back(x);
+    playInfoChannelList[x] = NULL;
   }
 
   Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
 
-  args.This()->Set(String::NewSymbol("audioRate"),
-      Integer::New(audio_rate), ReadOnly);
-  args.This()->Set(String::NewSymbol("audioFormat"),
-      Integer::New((audio_format & 0xFF)), ReadOnly);
-  args.This()->Set(String::NewSymbol("audioChannels"),
-      String::New((audio_channels > 2) ? "surround"
-                : (audio_channels > 1) ? "stereo" : "mono"), ReadOnly);
-  args.This()->Set(String::NewSymbol("numberOfAudioChannels"),
-        Integer::New(numChannels));
+  args.This()->Set(String::NewSymbol("audioRate"), Integer::New(audio_rate),
+      ReadOnly);
+  args.This()->Set(String::NewSymbol("audioFormat"), Integer::New((audio_format
+      & 0xFF)), ReadOnly);
+  args.This()->Set(String::NewSymbol("audioChannels"), String::New(
+      (audio_channels > 2) ? "surround" : (audio_channels > 1) ? "stereo"
+          : "mono"), ReadOnly);
+  args.This()->Set(String::NewSymbol("numberOfAudioChannels"), Integer::New(
+      numChannels));
 
-  SDLMixer *sdlmixer = new SDLMixer();
-  sdlmixer->Wrap(args.This());
+  SDLMixer *sm = new SDLMixer();
+
+  // TODO: switch to singleton for ChannelFinished notification?
+  if (playDoneEvent == NULL) {
+    //printf("Construct playDoneEvent\n");
+    playDoneEvent = new AsyncPlayDone(sm, PlayDoneCallback);
+  }
+
+  sm->Wrap(args.This());
   return args.This();
 }
 
+void SDLMixer::ChannelFinished(int channel) {
+  //printf("SDLMixer::ChannelFinished(%d)\n", channel);
 
+  playInfo *item = playInfoChannelList[channel];
+  //printf("item %d, playDoneEvent %d\n", item, playDoneEvent);
+  if ((item != NULL) && (playDoneEvent != NULL)) {
+    // TODO: switch to singleton for ChannelFinished notification?
+    playDoneEvent->send(item);
+  }
+}
+
+void SDLMixer::PlayDoneCallback(SDLMixer *sm, playInfo *pi) {
+  HandleScope scope;
+  //printf("SDLMixer::PlayDoneCallback(%d)\n", pi->channel);
+
+  playInfoChannelList[pi->channel] = NULL;
+  releaseAudioChannel(pi->channel);
+
+  //printf("availableChannels[%d]\n", (unsigned int)availableChannels.size());
+
+  if (availableChannels.size() == (unsigned int)numChannels) {
+    //printf("Delete playDoneEvent\n");
+    delete playDoneEvent;
+    playDoneEvent = NULL;
+  }
+
+  Local<Value> argv[2];
+  argv[0] = Local<Value>::New(String::New(pi->name));
+  argv[1] = Local<Value>::New(Integer::New(pi->channel));
+
+  if (pi->doCallback) {
+    TryCatch try_catch;
+    pi->cb->Call(Context::GetCurrent()->Global(), 2, argv);
+    if (try_catch.HasCaught()) {
+      FatalException(try_catch);
+    }
+  }
+
+  Mix_FreeChunk(pi->wave);
+  pi->wave = NULL;
+
+  pi->cb.Dispose();
+  free(pi);
+}
 
 extern "C" void init(Handle<Object> target) {
   HandleScope scope;
-
-  //initSDL();
-
-  //NODE_SET_METHOD(target, "play", Play);
 
   SDLMixer::Initialize(target);
 }

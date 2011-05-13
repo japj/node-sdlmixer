@@ -5,9 +5,13 @@
 #include <node.h>
 
 #include <deque>
+#include <vector>
 
 #include "SDL.h"
 #include "SDL_mixer.h"
+
+#include <pthread.h>
+#include "async.h"
 
 using namespace v8;
 using namespace node;
@@ -28,7 +32,15 @@ public:
 	static Persistent<FunctionTemplate> constructor_template;
 
 	static void Initialize(Handle<Object> target);
+
+	typedef Async<playInfo, SDLMixer> AsyncPlayDone;
 protected:
+
+	static int NotifyPlayed(eio_req *req);
+	static Handle<Value> Play(const Arguments& args);
+
+	static void ChannelFinished(int channel);
+	static void PlayDoneCallback(SDLMixer *sm, playInfo *pi);
 
 	static Handle<Value> New(const Arguments& args);
 
@@ -36,7 +48,9 @@ protected:
 	~SDLMixer();
 
 private:
+	static AsyncPlayDone *playDoneEvent;
 
+	static vector<playInfo *> playInfoChannelList;
 };
 
 } // namespace node_sdlmixer
