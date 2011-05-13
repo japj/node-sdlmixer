@@ -53,6 +53,8 @@ int SDLMixer::NotifyPlayed(eio_req *req) {
 Handle<Value> SDLMixer::Play(const Arguments& args) {
   HandleScope scope;
 
+  SDLMixer* sm = ObjectWrap::Unwrap<SDLMixer>(args.This());
+
   const char *usage = "usage: play(fileName, <callbackFunc>)";
   const char *noMoreChannels = "Out of available channels";
   // TODO: optional 2nd callbackFunc parameter?
@@ -78,6 +80,11 @@ Handle<Value> SDLMixer::Play(const Arguments& args) {
   strncpy(pi->name, *fileName, fileName.length() + 1);
 
   playInfoChannelList[channel] = pi;
+
+  if (playDoneEvent == NULL) {
+    //printf("Construct playDoneEvent\n");
+    playDoneEvent = new AsyncPlayDone(sm, PlayDoneCallback);
+  }
 
   eio_custom(DoPlay, EIO_PRI_DEFAULT, NotifyPlayed, pi);
   ev_ref( EV_DEFAULT_UC);
@@ -155,12 +162,6 @@ Handle<Value> SDLMixer::New(const Arguments &args) {
 
   SDLMixer *sm = new SDLMixer();
 
-  // TODO: switch to singleton for ChannelFinished notification?
-  if (playDoneEvent == NULL) {
-    //printf("Construct playDoneEvent\n");
-    playDoneEvent = new AsyncPlayDone(sm, PlayDoneCallback);
-  }
-
   sm->Wrap(args.This());
   return args.This();
 }
@@ -171,7 +172,6 @@ void SDLMixer::ChannelFinished(int channel) {
   playInfo *item = playInfoChannelList[channel];
   //printf("item %d, playDoneEvent %d\n", item, playDoneEvent);
   if ((item != NULL) && (playDoneEvent != NULL)) {
-    // TODO: switch to singleton for ChannelFinished notification?
     playDoneEvent->send(item);
   }
 }
