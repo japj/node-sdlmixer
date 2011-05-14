@@ -1,6 +1,6 @@
 {
     "name": "sdlmixer",
-    "version": "0.0.2",
+    "version": "0.0.9",
     "description": "Audio file playback using SDL_mixer for node",
     "keywords": [],
     "author": "Jeroen Janssen <jeroen.janssen@gmail.com>",

@@ -1,5 +1,11 @@
-Unreleased
+2011.05.14, Version 0.0.9
 
+* changed npm package to 'sdlmixer' 
+  (was previously 'node-sdlmixer').
+* ev_async is now used to for notificating audio played.
+  this frees up the node thread pool and now the concurrency of
+  playing audio is not limited to the amount of threads in the pool.
+  (and we don't starve the thread pool).
 * switched to ObjectWrap derived class implementation
 * added new sdlmixer library properties: 
   audioRate, audioFormat, audioChannels, numberOfAudioChannels for
@@ -8,11 +14,8 @@ Unreleased
   - src/ contains c++ sources (incl seperated header file)
   - wavs/ contains original audio tree layout from play.js tree
   - test/ contains the test
-* changed npm package to 'sdlmixer' 
-  (was previously 'node-sdlmixer')
 * better channel administration for concurrent play
 * added optional parameters to play done callback (fileName, channel)
-
 
 2011.05.10, Version 0.0.2
 
