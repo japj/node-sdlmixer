@@ -1,4 +1,5 @@
 #include "node-sdlmixer.h"
+#include "node_async_shim.h"
 
 using namespace node_sdlmixer;
 
@@ -30,9 +31,7 @@ static void releaseAudioChannel(int channel) {
   availableChannels.push_back(channel);
 }
 
-#ifdef UV_VERSION_MAJOR
-static void UV_Play(uv_work_t *req)
-{
+async_rtn doing_play (uv_work_t *req) {
   struct playInfo * pi = (struct playInfo *) req->data;
 
   /* Load the requested wave file */
@@ -41,28 +40,12 @@ static void UV_Play(uv_work_t *req)
   //printf("Playing [%s] on channel[%d]\n", pi->name, pi->channel);
   /* Play and then exit */
   Mix_PlayChannel(pi->channel, pi->wave, 0);
-}
-#else
-static int EIO_Play(eio_req *req) {
-  struct playInfo * pi = (struct playInfo *) req->data;
-
-  /* Load the requested wave file */
-  pi->wave = Mix_LoadWAV(pi->name);
-
-  //printf("Playing [%s] on channel[%d]\n", pi->name, pi->channel);
-  /* Play and then exit */
-  Mix_PlayChannel(pi->channel, pi->wave, 0);
-
-  return 0;
+  RETURN_ASYNC
 }
 
-int EIO_AfterPlay(eio_req *req) {
-  HandleScope scope;
-  ev_unref( EV_DEFAULT_UC);
-  //printf("SDLMixer::NotifyPlayed\n");
-  return 0;
+async_rtn after_doing_play (uv_work_t *req) {
+  RETURN_ASYNC_AFTER
 }
-#endif
 
 Handle<Value> SDLMixer::Play(const Arguments& args) {
   HandleScope scope;
@@ -100,14 +83,7 @@ Handle<Value> SDLMixer::Play(const Arguments& args) {
     playDoneEvent = new AsyncPlayDone(sm, PlayDoneCallback);
   }
 
-#ifdef UV_VERSION_MAJOR
-  uv_work_t* work_req = (uv_work_t *) (calloc(1, sizeof(uv_work_t)));
-  work_req->data = pi;
-  uv_queue_work(uv_default_loop(), work_req, UV_Play, NULL);
-#else
-  eio_custom(EIO_Play, EIO_PRI_DEFAULT, EIO_AfterPlay, pi);
-  ev_ref( EV_DEFAULT_UC);
-#endif
+  BEGIN_ASYNC(pi, doing_play, after_doing_play);
 
   return scope.Close(args[0]);
 }

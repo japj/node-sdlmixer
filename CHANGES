@@ -1,6 +1,8 @@
 Unreleased
 * node 0.6.x (libuv) support
   'known' issue atm: SEGV at end of program (not good!)
+  using node_async_shim.h by TooTallNate
+  using async.h by Konstantin Käfer
 
 2011.05.14, Version 0.0.9
 
