@@ -1,6 +1,6 @@
 var sdlmixer = require("../sdlmixer"),
-         sys = require("sys"),
-        puts = sys.puts;
+        util = require("util"),
+        puts = util.puts;
 
 puts("Opened audio at " + sdlmixer.audioRate + " Hz " + sdlmixer.audioFormat + " bit " + 
 		sdlmixer.audioChannels + " and " + sdlmixer.numberOfAudioChannels + " channels.")

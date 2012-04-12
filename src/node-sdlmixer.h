@@ -11,7 +11,11 @@
 #include "SDL_mixer.h"
 
 #include <pthread.h>
-#include "async.h"
+#ifdef UV_VERSION_MAJOR
+#include "async_uv.h"
+#else
+#include "async_ev.h"
+#endif
 
 using namespace v8;
 using namespace node;
@@ -36,7 +40,6 @@ public:
 	typedef Async<playInfo, SDLMixer> AsyncPlayDone;
 protected:
 
-	static int NotifyPlayed(eio_req *req);
 	static Handle<Value> Play(const Arguments& args);
 
 	static void ChannelFinished(int channel);

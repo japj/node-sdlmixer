@@ -1,3 +1,7 @@
+Unreleased
+* node 0.6.x (libuv) support
+  'known' issue atm: SEGV at end of program (not good!)
+
 2011.05.14, Version 0.0.9
 
 * changed npm package to 'sdlmixer' 

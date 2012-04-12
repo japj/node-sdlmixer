@@ -30,7 +30,20 @@ static void releaseAudioChannel(int channel) {
   availableChannels.push_back(channel);
 }
 
-static int DoPlay(eio_req *req) {
+#ifdef UV_VERSION_MAJOR
+static void UV_Play(uv_work_t *req)
+{
+  struct playInfo * pi = (struct playInfo *) req->data;
+
+  /* Load the requested wave file */
+  pi->wave = Mix_LoadWAV(pi->name);
+
+  //printf("Playing [%s] on channel[%d]\n", pi->name, pi->channel);
+  /* Play and then exit */
+  Mix_PlayChannel(pi->channel, pi->wave, 0);
+}
+#else
+static int EIO_Play(eio_req *req) {
   struct playInfo * pi = (struct playInfo *) req->data;
 
   /* Load the requested wave file */
@@ -43,12 +56,13 @@ static int DoPlay(eio_req *req) {
   return 0;
 }
 
-int SDLMixer::NotifyPlayed(eio_req *req) {
+int EIO_AfterPlay(eio_req *req) {
   HandleScope scope;
   ev_unref( EV_DEFAULT_UC);
   //printf("SDLMixer::NotifyPlayed\n");
   return 0;
 }
+#endif
 
 Handle<Value> SDLMixer::Play(const Arguments& args) {
   HandleScope scope;
@@ -86,8 +100,14 @@ Handle<Value> SDLMixer::Play(const Arguments& args) {
     playDoneEvent = new AsyncPlayDone(sm, PlayDoneCallback);
   }
 
-  eio_custom(DoPlay, EIO_PRI_DEFAULT, NotifyPlayed, pi);
+#ifdef UV_VERSION_MAJOR
+  uv_work_t* work_req = (uv_work_t *) (calloc(1, sizeof(uv_work_t)));
+  work_req->data = pi;
+  uv_queue_work(uv_default_loop(), work_req, UV_Play, NULL);
+#else
+  eio_custom(EIO_Play, EIO_PRI_DEFAULT, EIO_AfterPlay, pi);
   ev_ref( EV_DEFAULT_UC);
+#endif
 
   return scope.Close(args[0]);
 }
