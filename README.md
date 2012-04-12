@@ -26,6 +26,12 @@ tested on osx 10.6.7 + brew
 
 npm install sdlmixer
 
+## Build from source
+
+git clone git://github.com/japj/node-sdlmixer.git
+cd node-sdlmixer
+node-waf configure build
+
 ## Simple usage example
 
     $ node
