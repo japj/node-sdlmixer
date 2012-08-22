@@ -5,5 +5,5 @@
     "keywords": [],
     "author": "Jeroen Janssen <jeroen.janssen@gmail.com>",
     "main": "./sdlmixer",
-    "engines": { "node": "0.4.x" }
+    "engine": "node >= 0.4.x" 
 }
