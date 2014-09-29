@@ -211,3 +211,5 @@ extern "C" void init(Handle<Object> target) {
 
   SDLMixer::Initialize(target);
 }
+
+NODE_MODULE(node_sdlmixer, init)
